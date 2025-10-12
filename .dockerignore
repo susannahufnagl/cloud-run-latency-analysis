@@ -1,0 +1,18 @@
+# Ignoriere Python Cache
+__pycache__/
+*.pyc
+
+# Lokale venv
+venv/
+env/
+
+
+.git/
+.gitignore
+
+*.log
+*.tmp
+
+*.zip
+*.tar
+*.gz

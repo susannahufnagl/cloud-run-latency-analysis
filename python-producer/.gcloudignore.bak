@@ -1,0 +1,28 @@
+# Python Cache
+__pycache__/
+*.pyc
+
+# Lokale venv
+venv/
+env/
+
+# Git
+.git/
+.gitignore
+
+# Logs und temporäre Dateien
+*.logok b
+*.tmp
+*.out
+
+# Sonstige Archive
+*.zip
+*.tar
+*.gz
+
+
+# Lokale Messdaten
+latencies.csv
+measure.sh
+
+

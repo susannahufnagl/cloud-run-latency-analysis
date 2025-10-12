@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+
+# Go
+bin/
+vendor/
+
+node_modules/
+
+# System
+.DS_Store
+*.log
