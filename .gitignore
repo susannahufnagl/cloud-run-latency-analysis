@@ -237,3 +237,6 @@ terraform.rc
 
 # End of https://www.toptal.com/developers/gitignore/api/go,python,terraform.DS_Store
 services/**/compute-bench
+.DS_Store
+**/.DS_Store
+archive/cb-go/compute-bench
