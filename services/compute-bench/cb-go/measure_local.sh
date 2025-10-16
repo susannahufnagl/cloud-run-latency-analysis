@@ -1,12 +1,10 @@
-#!/usr/bin/env bash
+
 set -euo pipefail
 
 RUN_URL="https://cloudrun-broker-single-997595983891.europe-west10.run.app"
 OUT="latencies.csv"
-COUNT=100       # Anzahl Messungen
-SLEEP=0.2       # 0.2s = 5 RPS (konservativ, vermeidet Warteschlangen)
-
-# Optionales Warmup (kannst du löschen, wenn du die ersten Samples später verwirfst)
+COUNT=100       
+SLEEP=0.2       
 for _ in {1..10}; do curl -s "$RUN_URL/send" >/dev/null || true; done
 
 echo "timestamp_iso,iteration,http_status,latency_ms" > "$OUT"

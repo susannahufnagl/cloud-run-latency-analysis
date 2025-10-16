@@ -7,7 +7,7 @@ from datetime import datetime
 GO_URL = "https://cloudrun-broker-single-go-cb2s6gb3jq-oe.a.run.app/send/nobatch"
 PY_URL = "https://cloudrun-broker-single-py-cb2s6gb3jq-oe.a.run.app/send"
 
-# Wieviele Messungen pro Service
+#wie viele Messungen 
 N = 500
 
 def measure(url, outfile, latency_field):

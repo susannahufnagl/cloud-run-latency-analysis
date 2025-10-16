@@ -1,0 +1,15 @@
+ts_iso,endpoint,http_status,client_total_ms,server_latency_ms,url
+2025-10-16T11:46:26Z,ce_nobatch,000,21.718,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:26Z,ce_nobatch,000,718.926,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:27Z,ce_nobatch,000,1339.067,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:29Z,ce_nobatch,000,25.401,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:29Z,ce_nobatch,000,251.835,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:30Z,ce_nobatch,000,331.911,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:31Z,ce_nobatch,000,21.937,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:31Z,ce_nobatch,000,87.135,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:32Z,ce_nobatch,000,89.473,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:32Z,ce_nobatch,000,22.2,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:33Z,ce_nobatch,000,21.322,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:33Z,ce_nobatch,000,22.132,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:34Z,ce_nobatch,000,21.137,,http://34.32.22.109:8080/send/nobatch
+2025-10-16T11:46:34Z,ce_nobatch,000,155.303,,http://34.32.22.109:8080/send/nobatch

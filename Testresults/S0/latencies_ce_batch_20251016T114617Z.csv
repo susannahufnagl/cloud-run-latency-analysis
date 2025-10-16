@@ -1,0 +1,15 @@
+ts_iso,endpoint,http_status,client_total_ms,server_latency_ms,url
+2025-10-16T11:46:26Z,ce_batch,000,22.639,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:26Z,ce_batch,000,719.081,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:27Z,ce_batch,000,1339.08,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:29Z,ce_batch,000,24.966,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:29Z,ce_batch,000,252.134,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:30Z,ce_batch,000,331.815,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:31Z,ce_batch,000,22.065,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:31Z,ce_batch,000,85.171,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:32Z,ce_batch,000,89.947,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:32Z,ce_batch,000,21.836,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:33Z,ce_batch,000,21.465,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:33Z,ce_batch,000,22.139,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:34Z,ce_batch,000,21.052,,http://34.32.22.109:8080/send/batch
+2025-10-16T11:46:34Z,ce_batch,000,155.141,,http://34.32.22.109:8080/send/batch
