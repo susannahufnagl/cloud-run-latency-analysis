@@ -67,6 +67,7 @@ except:
   print("")
 PY
 )
+  server_ms=""; cold=""
   if command -v jq >/dev/null 2>&1; then
     server_ms="$(echo "$body" | jq -r '.latency_ms // .latency_ms_nobatch // .latency_ms_batch // empty' 2>/dev/null || true)"
     cold="$(echo "$body" | jq -r '.cold_start // empty' 2>/dev/null || true)"
