@@ -91,3 +91,27 @@ For open source projects, say how it is licensed.
 
 ## Project status
 If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+
+
+# Keep alive Optionen neu verbinden um Broken pipe zu verhindern 
+gcloud compute ssh ce-latency-bench --zone europe-west10-b -- \
+  -o ServerAliveInterval=30 -o ServerAliveCountMax=3
+
+sudo apt update && sudo apt install -y tmux
+
+# neue beständige session 
+
+tmux new -s bench
+
+# läuft der producer wirklich? 
+sudo ss -lntp | egrep ':(80|8080)\b' || echo "nichts auf 80/8080"
+LISTEN 0      4096               *:8080            *:*    users:(("producer",pid=2980,fd=9))       
+
+
+# S0 ausführen lassen 
+# Producer läuft & CE_BASE lokal:
+export CE_BASE="http://127.0.0.1:8080"
+set -a; source ~/repo/.env; set +a    # für CR_BASE in den CR-Tests
+bash ~/repo/scripts/run_all_concurrent_0.sh
+bash ~/repo/scripts/run_all_independent_0.sh
+
