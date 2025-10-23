@@ -1,10 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# --- stabile Ablage ---
+STAGE="${STAGE:-0}"  
 REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+[[ -f "$REPO_ROOT/.env" ]] && set -a && source "$REPO_ROOT/.env" && set +a || true
+
+if [[ -z "${CE_BASE:-}" ]]; then
+  case "$STAGE" in
+    0) CE_BASE="http://127.0.0.1:8080" ;;
+    # ;;   # Stufe 1 => localhost
+    # optional weitere Defaults:
+    # 2) CE_BASE="http://10.0.0.2:8080" ;;
+    # 3) CE_BASE="http://34.32.11.63:8080" ;;
+    *) : ;;  # für andere Stages kein Auto-Default
+  esac
+fi
+
 BASE_RESULTS_DIR="${BASE_RESULTS_DIR:-$REPO_ROOT/Testresults}"
-STAGE_LABEL="${STAGE_LABEL:-S0_concurrent}"  # beim independent-Skript: S0_independent
+STAGE_LABEL="${STAGE_LABEL:-S${STAGE}_concurrent}"  # beim independent-Skript: S0_independent //hier zahl dynamisch übergeben dh wir schrieben skritp dass zaahl zwsiche 0 und 5 übergibt und damit die tests starte t 
 TS_UTC="$(date -u +"%Y-%m-%d_%H-%M-%S")"
 RUN_ID="$(printf 'run-%04d' $(( RANDOM % 10000 )))"   # oder zähler, s.u.
 OUTDIR="${BASE_RESULTS_DIR}/${STAGE_LABEL}/${TS_UTC}_${RUN_ID}"
@@ -19,8 +32,8 @@ fi
 
 
 # Stage 0: Cloud Run only, beide Endpunkte gleichzeitig pro Runde ---
-: "${CR_BASE:?Setze CR_BASE, z.B. https://cloudrun-broker-single-go-997595983891.europe-west10.run.app}"
-: "${CE_BASE:?Setze CE_BASE, z.B. http://127.0.0.1:8080}"
+: "${CR_BASE:?Setze CR_BASE, z.B. https://cloudrun-broker-single-go-997595983891.europe-west10.run.app}" 
+: "${CE_BASE:?Setze CE_BASE, z.B. http://127.0.0.1:8080}" # überlegen wie ich sie dynamsich übergeben kann ge
 : "${COUNT:=500}"       #Runden/Requests je Endpoint
 : "${SLEEP:=0.2}"       #Pause zwischen Runden (Sekunden)
 : "${TIMEOUT:=15}"      #curl Timeout pro Request
@@ -79,7 +92,7 @@ PY
   echo "$ts,$name,$http,$client_ms,$server_ms,$url,$cold" >> "$csv"
 }
 
-echo "Starte S0 (gleichzeitige Runden): COUNT=$COUNT, SLEEP=$SLEEP"
+echo "Starte S${STAGE}: COUNT=$COUNT, SLEEP=$SLEEP"
 for i in $(seq 1 "$COUNT"); do
   #parallel abfeuern der endpunkte 
   measure_one "cr_nobatch" "$cr_nobatch_url" "$CSV_CR_NB" & # jede measure_one funtkion ruft intern curl auf, alle vier gleichzeitig 

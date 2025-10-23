@@ -103,15 +103,79 @@ sudo apt update && sudo apt install -y tmux
 
 tmux new -s bench
 
-# läuft der producer wirklich? 
+
+# S0 ausführen lassen 
+#   VM starten 
+1. source .env.local
+2. vm up 
+3. vm ssh 
+4. ins repo lotsen und git pullen 
+
+# producer starten --> auch für S1
+
+cd ~/repo/services/Cloud-Run/go-producer   # Pfad anpassen falls anders
+go mod tidy
+go build -o producer .
+
+./producer > /tmp/producer.log 2>&1 & # starten 
+#   läuft der producer wirklich? 
 sudo ss -lntp | egrep ':(80|8080)\b' || echo "nichts auf 80/8080"
 LISTEN 0      4096               *:8080            *:*    users:(("producer",pid=2980,fd=9))       
 
 
-# S0 ausführen lassen 
-# Producer läuft & CE_BASE lokal:
+
+
+#   Producer läuft & CE_BASE lokal:
 export CE_BASE="http://127.0.0.1:8080"
 set -a; source ~/repo/.env; set +a    # für CR_BASE in den CR-Tests
 bash ~/repo/scripts/run_all_concurrent_0.sh
 bash ~/repo/scripts/run_all_independent_0.sh
+
+
+# S2
+    ## Firewall Rules erfahren
+    gcloud compute firewall-rules list --filter="name~8080"
+
+    ## Health Testen des lazfenden Prozesses und des LoadBalancers 
+
+    # lokal
+    curl -i http://localhost:8080/health || tail -n 200 /tmp/producer.log
+
+    # via Load Balancer
+    LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')
+    curl -i "http://$LB_IP/health"
+
+
+    ## Backend Gesundheit aus Sicht des LB
+
+    gcloud compute backend-services get-health be-s2 --global
+
+    ## Von wo kommen Verbindunegn an 8080 
+
+    sudo journalctl -u your-service | tail
+    # oder mit tcpdump
+    sudo tcpdump -n host 35.191.0.0/16 or host 130.211.0.0/22
+
+    # prüfen was an benötigten elementen für S2 schone existiert 
+
+    gcloud compute instance-groups unmanaged list --zones=europe-west10-b
+    gcloud compute instance-groups unmanaged list-instances mig-s2 --zone=europe-west10-b
+    gcloud compute health-checks describe hc-8080
+    gcloud compute backend-services list
+    gcloud compute url-maps list
+    gcloud compute target-http-proxies list
+    gcloud compute forwarding-rules list
+
+    # starten der Tests 
+
+    LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')
+    echo "LB_IP=$LB_IP" 
+
+    curl -i "http://$LB_IP/health"
+
+
+    export CE_BASE="http://$LB_IP:8080"
+    set -a; source ~/repo/.env; set +a    # für CR_BASE in den CR-Tests
+    bash ~/repo/scripts/run_all_concurrent_0.sh
+    bash ~/repo/scripts/run_all_independent_0.sh
 

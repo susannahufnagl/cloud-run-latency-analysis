@@ -1,0 +1,3 @@
+ts_utc,stage,run_id,dir,project,instance,zone,count,sleep,timeout,ce_base,cr_base
+2025-10-17T14:09:11Z,S0_concurrent,run-1642,/home/susannahufnagl/repo/Testresults/S0_concurrent/2025-10-17_14-05-17_run-1642,project-accountsec,ce-latency-bench,europe-west10-b,500,0.2,15,http://127.0.0.1:8080,https://cloudrun-broker-single-go-997595983891.europe-west10.run.app
+2025-10-17T14:11:23Z,S0_independent,run-7387,/home/susannahufnagl/repo/Testresults/S0_independent/2025-10-17_14-09-11_run-7387,project-accountsec,ce-latency-bench,europe-west10-b,500,0.2,15,http://127.0.0.1:8080,https://cloudrun-broker-single-go-997595983891.europe-west10.run.app
