@@ -1,0 +1,6 @@
+ts_iso,endpoint,http_status,client_total_ms,server_latency_ms,url,cold_start
+2025-10-24T11:34:28Z,cr_batch,200,82.497,13.426,https://cloudrun-broker-single-go-997595983891.europe-west10.run.app/send/batch,
+2025-10-24T11:34:29Z,cr_batch,200,109.749,11.945,https://cloudrun-broker-single-go-997595983891.europe-west10.run.app/send/batch,
+2025-10-24T11:34:29Z,cr_batch,200,112.199,12.649,https://cloudrun-broker-single-go-997595983891.europe-west10.run.app/send/batch,
+2025-10-24T11:34:29Z,cr_batch,200,100.645,16.582,https://cloudrun-broker-single-go-997595983891.europe-west10.run.app/send/batch,
+2025-10-24T11:34:30Z,cr_batch,200,67.819,14.011,https://cloudrun-broker-single-go-997595983891.europe-west10.run.app/send/batch,

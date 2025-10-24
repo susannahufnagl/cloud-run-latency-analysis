@@ -1,0 +1,2 @@
+ts_iso,endpoint,http_status,client_total_ms,server_latency_ms,url,cold_start
+2025-10-24T11:00:09Z,ce_batch,000,15001.381,,http://34.8.201.151:8080/send/batch,

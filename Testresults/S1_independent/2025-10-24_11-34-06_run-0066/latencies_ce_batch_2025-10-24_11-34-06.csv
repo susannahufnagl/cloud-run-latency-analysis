@@ -1,0 +1,6 @@
+ts_iso,endpoint,http_status,client_total_ms,server_latency_ms,url,cold_start
+2025-10-24T11:34:08Z,ce_batch,200,17.843,13.167,http://34.8.201.151/send/batch,
+2025-10-24T11:34:08Z,ce_batch,200,19.409,12.802,http://34.8.201.151/send/batch,
+2025-10-24T11:34:08Z,ce_batch,200,19.958,11.766,http://34.8.201.151/send/batch,
+2025-10-24T11:34:09Z,ce_batch,200,20.538,12.557,http://34.8.201.151/send/batch,
+2025-10-24T11:34:09Z,ce_batch,200,16.169,11.048,http://34.8.201.151/send/batch,

@@ -1,0 +1,6 @@
+ts_iso,endpoint,http_status,client_total_ms,server_latency_ms,url,cold_start
+2025-10-24T11:20:22Z,ce_nobatch,200,10.146,6.285,http://34.8.201.151/send/nobatch,
+2025-10-24T11:20:23Z,ce_nobatch,200,15.591,6.462,http://34.8.201.151/send/nobatch,
+2025-10-24T11:20:23Z,ce_nobatch,200,12.538,6.55,http://34.8.201.151/send/nobatch,
+2025-10-24T11:20:23Z,ce_nobatch,200,12.533,7.376,http://34.8.201.151/send/nobatch,
+2025-10-24T11:20:23Z,ce_nobatch,200,11.334,6.542,http://34.8.201.151/send/nobatch,
