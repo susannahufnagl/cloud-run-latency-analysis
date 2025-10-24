@@ -113,7 +113,7 @@ tmux new -s bench
 
 # producer starten --> auch für S1
 
-cd ~/repo/services/Cloud-Run/go-producer   # Pfad anpassen falls anders
+cd ~/ba/services/Cloud-Run/go-producer   
 go mod tidy
 go build -o producer .
 
@@ -127,19 +127,48 @@ LISTEN 0      4096               *:8080            *:*    users:(("producer",pid
 
 #   Producer läuft & CE_BASE lokal:
 export CE_BASE="http://127.0.0.1:8080"
-set -a; source ~/repo/.env; set +a    # für CR_BASE in den CR-Tests
-bash ~/repo/scripts/run_all_concurrent_0.sh
-bash ~/repo/scripts/run_all_independent_0.sh
+set -a; source ~/ba/.env; set +a    # für CR_BASE in den CR-Tests
+bash ~/ba/scripts/run_all_concurrent_0.sh
+bash ~/ba/scripts/run_all_independent_0.sh
 
 
-# S2
+## aktualisierte ersion 
+
+STAGE=0 bash ~/repo/scripts/run_all_concurrent_0.sh
+STAGE=0 bash ~/repo/scripts/run_all_independent_0.sh
+
+( # S2
     ## Firewall Rules erfahren
     gcloud compute firewall-rules list --filter="name~8080"
 
     ## Health Testen des lazfenden Prozesses und des LoadBalancers 
 
-    # lokal
+    (# lokal
     curl -i http://localhost:8080/health || tail -n 200 /tmp/producer.log
+
+    export PROJECT="${PROJECT:-${PROJECT_ID:-}}"
+    export TOPIC="${TOPIC:-${TOPIC_ID:-}}"
+
+    pkill -f 'producer' 2>/dev/null || true
+    cd ~/ba/services/Cloud-Run/go-producer
+    nohup ./producer > /tmp/producer.log 2>&1 &)
+
+
+    # checken ob die Project und Topic übergebne wurden 
+    tr '\0' '\n' < /proc/$PID/environ | egrep '^(PROJECT|TOPIC)=' || echo "ENV im Prozess fehlen"
+
+    # müssen nach dem starten des Producers hier übergeben werden oder inline wie hier
+
+
+    # alternatives
+
+    export PROJECT=project-accountsec
+    export TOPIC=cloudrun-broker-single
+    pkill -f producer 2>/dev/null || true
+    nohup ./producer > /tmp/producer.log 2>&1 &
+
+
+
 
     # via Load Balancer
     LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')
@@ -178,4 +207,59 @@ bash ~/repo/scripts/run_all_independent_0.sh
     set -a; source ~/repo/.env; set +a    # für CR_BASE in den CR-Tests
     bash ~/repo/scripts/run_all_concurrent_0.sh
     bash ~/repo/scripts/run_all_independent_0.sh
+)
 
+# S1 tatsächlicher start verlauf zuvor
+
+# alle lauschenden Prozesse auf irgendeinen Port anzeigen lassen 
+
+sudo ss -lntp
+
+
+
+pkill -x producer || true
+sleep 1
+sudo ss -lntp | grep ':8080\b' || echo "Port 8080 frei"
+
+export PROJECT=project-accountsec
+export PROJECT_ID="$PROJECT"
+export GOOGLE_CLOUD_PROJECT="$PROJECT"
+
+export TOPIC=cloudrun-broker-single
+export TOPIC_ID="$TOPIC"
+
+export PORT=8080
+
+
+cd ~/ba/services/Cloud-Run/go-producer
+go version >/dev/null 2>&1 || sudo apt update && sudo apt install -y golang
+go build -o producer .
+
+
+./producer > /tmp/producer.log 2>&1 &
+sleep 1
+curl -i http://127.0.0.1:8080/health || tail -n 200 /tmp/producer.log
+
+
+## pgrep sucht alle laufenden Prozesse, deren Name exakt producer lautet
+# head n1 nimmt nur den ersten treffer falls mehrere. producer prozesse laufenden
+# ergebnis wird in pid gespeichert 
+## environ enthält alle umgebungsariablen mit denne der Prozess gestartet wurde
+pid=$(pgrep -x producer | head -n1)
+echo "PID=$pid"
+sudo tr '\0' '\n' < /proc/$pid/environ | egrep '^(PROJECT|TOPIC|PORT)='
+
+
+curl -i http://localhost:8080/health || tail -n 200 /tmp/producer.log
+
+
+LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')
+echo "LB_IP=$LB_IP"
+
+
+curl -i "http://$LB_IP/health"
+
+## Tests ausführen 
+
+STAGE=1 CE_BASE="http://$LB_IP:8080" bash ~/ba/scripts/run_all_concurrent_0.sh
+STAGE=1 CE_BASE="http://$LB_IP:8080" bash ~/ba/scripts/run_all_independent_0.sh
