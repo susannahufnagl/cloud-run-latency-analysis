@@ -1,15 +1,24 @@
-FROM golang:1.22 AS build
+FROM golang:1.25 AS build
 WORKDIR /src
+
+# Module zuerst, damit Caching greift
 COPY go.mod go.sum ./
 RUN go mod download
-COPY . .
-# 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/producer ./...
 
+# Rest des Codes
+COPY . .
+
+# Statisches Linux/amd64-Binary bauen
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/producer .
+
+# ---- Minimal Runtime (non-root, kein Shell) ----
 FROM gcr.io/distroless/base-debian12
 WORKDIR /app
 COPY --from=build /app/producer /app/producer
-EXPOSE 8080
+
+# Cloud-Run/CE-Default
 ENV PORT=8080
-#falls app auf 0000 port lauschen muss
+EXPOSE 8080
+
+# Non-root läuft in distroless per default (UID 65532)
 ENTRYPOINT ["/app/producer"]
