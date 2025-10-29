@@ -1,2 +1,0 @@
-ts_iso,endpoint,http_status,client_total_ms,server_latency_ms,url,cold_start
-2025-10-24T11:00:09Z,ce_nobatch,000,15001.472,,http://34.8.201.151:8080/send/nobatch,
