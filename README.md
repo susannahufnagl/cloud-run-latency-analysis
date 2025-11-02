@@ -138,7 +138,7 @@ STAGE=0 bash ~/repo/scripts/run_all_concurrent_0.sh
 STAGE=0 bash ~/repo/scripts/run_all_independent_0.sh
 
 ( # S2
-    ## Firewall Rules erfahren
+    ## Firewall Rules erfahren --> aus Lokal 
     gcloud compute firewall-rules list --filter="name~8080"
 
     ## Health Testen des lazfenden Prozesses und des LoadBalancers 
@@ -250,16 +250,311 @@ echo "PID=$pid"
 sudo tr '\0' '\n' < /proc/$pid/environ | egrep '^(PROJECT|TOPIC|PORT)='
 
 
-curl -i http://localhost:8080/health || tail -n 200 /tmp/producer.log
+curl -i http://localhost:8080/health || tail -n 200 /tmp/producer.log # Der Load‑Balancer wurde in dieser Phase so konfiguriert, dass er den Frontend‑Port 8080 annahm und eins‑zu‑eins auf Port 8080 der VM weiterleitete. Das ist technisch möglich – Google‑Cloud‑Load‑Balancer unterstützen 80, 8080 und 443 als öffentliche Ports – und vereinfacht die Messung, weil kein zusätzlicher URL‑Map‑Hop oder Port‑Übersetzung stattfindet.
 
 
-LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')
-echo "LB_IP=$LB_IP"
+LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')  #lokal aufrufen 
+echo "LB_IP=$LB_IP"   
+<!-- die loadbalcner anfrage geh tnur über den lokalen host -->
 
 
-curl -i "http://$LB_IP/health"
+curl -i "http://$LB_IP/health" #lokal aufrufen
 
 ## Tests ausführen 
 
 STAGE=1 CE_BASE="http://$LB_IP:8080" bash ~/ba/scripts/run_all_concurrent_0.sh
 STAGE=1 CE_BASE="http://$LB_IP:8080" bash ~/ba/scripts/run_all_independent_0.sh
+
+
+# S2 Docker Version 
+
+# 0) Ziel & Prinzip
+
+Konstante halten:  LB, IP, Port (8080), IAM/ADC, Topic, Testskripte, COUNT/SLEEP identisch lassen
+Einzige Variable:** Prozess läuft vorher direkt auf der VM, jetzt im Container
+
+
+
+# A) Basis (Referenz) – Binary auf der VM
+
+1. Aufräumen & Port prüfen
+
+```bash
+pkill -x producer || true --> müssen wir nicht machen außer wir greifen nicht aus docker grade darauf zu 
+alternativ nur: docker restart lat-bench
+sudo ss -lntp | grep ':8080\b' || echo "Port 8080 frei"
+
+```
+Antwort:
+LISTEN 0      4096         0.0.0.0:8080      0.0.0.0:*    users:(("docker-proxy",pid=5068,...))
+LISTEN 0      4096            [::]:8080         [::]:*    users:(("docker-proxy",pid=5074,...))
+
+
+
+Das heißt:
+Port 8080 auf deiner VM wird vom docker-proxy „überwacht“.
+Der docker-proxy ist der Prozess, der alles, was an der VM auf 8080 ankommt, an deinen Container weiterleitet.
+Also:
+Client → VM:8080 → docker-proxy → Container (App auf 8080)
+
+3. Was du jetzt machen kannst
+Du kannst direkt prüfen, ob dein Container auch wirklich läuft und reagiert:
+curl -fsS http://127.0.0.1:8080/health && echo "Container erreichbar ✅"
+
+
+2. Env & App starten (wie gehabt)
+
+```bash
+export PROJECT=project-accountsec
+export GOOGLE_CLOUD_PROJECT="$PROJECT"
+export TOPIC=cloudrun-broker-single
+export TOPIC_ID="$TOPIC"
+export PORT=8080
+
+cd ~/ba/services/Cloud-Run/go-producer
+go build -o producer .
+./producer > /tmp/producer.log 2>&1 &
+```
+
+3. Health & LB testen
+
+```bash
+curl -fsS http://127.0.0.1:8080/health && echo ok
+LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')
+curl -fsS "http://$LB_IP:8080/health" && echo LB ok
+```
+
+4. Messlauf (Referenz)
+
+```bash
+CR_BASE="https://<dein-cloud-run>.europe-west10.run.app" \
+CE_BASE="http://$LB_IP:8080" \
+STAGE=1 \
+bash ~/ba/scripts/run_all_concurrent_0.sh
+
+CR_BASE="https://<dein-cloud-run>.europe-west10.run.app" \
+CE_BASE="http://$LB_IP:8080" \
+STAGE=1 \
+bash ~/ba/scripts/run_all_independent_0.sh
+```
+
+→ CSVs sichern (Ordnerpfad aus Skript-Ausgabe notieren)
+
+---
+
+# B) Containerisiert – **einziger Unterschied: Prozess läuft im Container**
+
+1. Binary stoppen, Container sauber neu starten
+
+```bash
+pkill -x producer || true
+docker rm -f lat-bench 2>/dev/null || true
+sudo ss -lntp | grep ':8080\b' || echo "Port 8080 frei"
+```
+
+2. Env setzen (gleich wie oben)
+
+```bash
+export PROJECT=project-accountsec
+export GOOGLE_CLOUD_PROJECT="$PROJECT"
+export TOPIC=cloudrun-broker-single
+export TOPIC_ID="$TOPIC"
+export PORT=8080
+```
+
+3. Container Cloud-Run-artig starten (**gleicher Host-Port 8080!**)
+
+```bash
+docker run -d --name lat-bench --restart=always \
+  -p 8080:8080 \
+  --cpus=1 --memory=1024m \
+  --read-only \
+  --tmpfs /tmp:rw,nosuid,nodev,noexec,size=256m \
+  --security-opt no-new-privileges \
+  --pids-limit=4096 --cap-drop ALL \
+  --user 65532:65532 \
+  --stop-timeout 30 \
+  -e PORT -e PROJECT -e GOOGLE_CLOUD_PROJECT -e TOPIC -e TOPIC_ID \
+  ce-cb-go:latest
+```
+
+Wichtig: App im Container muss auf `0.0.0.0:$PORT` lauschen
+
+
+4. Health & LB testen (Pfad identisch)
+
+```bash
+curl -fsS http://127.0.0.1:8080/health && echo ok ## anscheinend bei restart hier erst anfangen und docker merkt sich die variablen 
+docker logs --tail 100 -f lat-bench
+## docker exec -it lat-bench env | egrep 'PROJECT|TOPIC|PORT'
+LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')
+echo "LB_IP=$LB_IP"
+
+curl -fsS "http://$LB_IP:8080/health" && echo LB ok
+```
+
+5. Messlauf (Container)
+
+```bash
+
+sh
+```
+
+
+STAGE=2 CE_BASE="http://$LB_IP" bash ~/ba/scripts/run_all_concurrent_0.sh
+STAGE=2 CE_BASE="http://$LB_IP" bash ~/ba/scripts/run_all_independent_0.sh
+
+
+---
+
+# C) Auswertung & Checks
+
+* Vergleich: nutze die zwei CSV-Sets (Basis vs Container) mit identischen COUNT/SLEEP
+* Relevante Spalten: `client_total_ms` (End-to-End), `server_latency_ms` (aus deiner App)
+* Delta Containerisierung = Mittelwert(Container) − Mittelwert(Basis)
+
+Sanity-Checks
+
+```bash
+# zeigt, dass Host:8080 vom docker-proxy gemappt ist
+sudo ss -lntp | egrep ':(8080)\b'
+
+# lauscht die App im Container?
+docker exec -it lat-bench sh -c 'ss -lntp | grep ":8080 " || netstat -lntp | grep ":8080 "'
+
+# Env im Container
+docker exec -it lat-bench env | egrep 'PROJECT|TOPIC|PORT'
+-- ```
+# von au0en schauen ob docker container lauscht \ 
+
+curl -fsS http://127.0.0.1:8080/health && echo "Container erreichbar ✅"
+
+<!--  geht weil docker-proxy den Host-Port 8080 auf den Container Port weiterleitet  -->
+
+# D) Warum das sauber ist (Port-Story in 1 Minute)
+
+
+# E) Häufige Stolpersteine (fix in Sekunden)
+
+* 8080 belegt → `docker rm -f lat-bench` oder Mapping prüfen
+* App hört nur auf `127.0.0.1` → in Code `0.0.0.0` setzen
+* LB spricht anderen Port → immer `:8080` durchgängig (Frontend, Backend, VM, Container)
+* Doppelt laufende Binary + Container → vorher immer `pkill -x producer`
+
+
+## Neustarten:
+
+prüfen ob Docker läuft:
+
+sudo systemctl status docker --no-pager
+
+schauen ob Container existiert: docker ps -a
+
+
+
+### 1) Minikube starten (Docker-Treiber)
+
+```bash
+minikube start --driver=docker
+kubectl get nodes ##  <!-- gibt overview über die present nodes in dem Kubernetes cluser  -->, also ob unser Minikube cluster wirklich läuft
+
+## Falls Kubernetes noch nicht nsatlliert ist machen wir das so: minikube kubectl -- get nodes
+
+<!-- 
+## Wir setzen alias für minikube kubect1 : alias kubectl="minikube kubectl --" -->
+--> was wir bis hier hin gemacht haben_ Cluster läuft, ce-cb-go:latest ist schon in Minikube geladen
+
+Nächste Schritte, ohne Yaml, 1. Deployment erstellen
+
+```
+minikube image load ce-cb-go:latest
+
+### 2) Docker-Build in Minikube (damit K8s das Image findet)
+
+```bash
+# Docker-CLI auf den Minikube-Daemon umbiegen
+eval $(minikube -p minikube docker-env)
+
+# Im Projektordner mit deinem Dockerfile:
+docker build -t lat-bench:local .
+
+--> antwort f05e64a363f4   gcr.io/k8s-minikube/kicbase:v0.0.48   "/usr/local/bin/entr…"   7 minutes ago   Up 7 minutes   127.0.0.1:32768->22/tcp, 127.0.0.1:32769->2376/tcp, 127.0.0.1:32770->5000/tcp, 127.0.0.1:32771->8443/tcp, 127.0.0.1:32772->32443/tcp   minikube
+```
+
+### 3) Deployment + Service anlegen
+
+Erstelle `lat-bench-deployment.yaml`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lat-bench
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lat-bench
+  template:
+    metadata:
+      labels:
+        app: lat-bench
+    spec:
+      containers:
+      - name: lat-bench
+        image: lat-bench:local
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PORT
+          value: "8080"
+        - name: GOOGLE_CLOUD_PROJECT
+          value: "DEIN_PROJECT_ID"
+        - name: PROJECT
+          value: "DEIN_PROJECT_ID"
+        - name: PROJECT_ID
+          value: "DEIN_PROJECT_ID"
+        - name: TOPIC
+          value: "DEIN_TOPIC"
+        - name: TOPIC_ID
+          value: "DEIN_TOPIC"
+        ports:
+        - containerPort: 8080
+```
+
+Erstelle `lat-bench-service.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: lat-bench-svc
+spec:
+  type: NodePort
+  selector:
+    app: lat-bench
+  ports:
+  - port: 80
+    targetPort: 8080
+    nodePort: 30080   # fest, damit du stabile URL hast
+```
+
+### 4) Anwenden & prüfen
+
+```bash
+kubectl apply -f lat-bench-deployment.yaml
+kubectl apply -f lat-bench-service.yaml
+
+kubectl get pods -o wide
+kubectl logs -l app=lat-bench --tail=100
+```
+
+### 5) URL holen & Healthcheck
+
+```bash
+minikube service lat-bench-svc --url
+# Ausgabe z.B. http://192.168.49.2:30080
+curl -sS http://192.168.49.2:30080/health
+```
+
+
+# Anwenden der 
