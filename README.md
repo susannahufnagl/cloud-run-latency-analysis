@@ -557,4 +557,7 @@ curl -sS http://192.168.49.2:30080/health
 ```
 
 
-# Anwenden der 
+# Anwenden der beiden yamls 
+
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
