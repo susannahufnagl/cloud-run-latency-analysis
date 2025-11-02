@@ -31,6 +31,8 @@ spec:
           value: cloudrun-broker-single
         - name: TOPIC_ID
           value: cloudrun-broker-single
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/secrets/gcp/key.json
         readinessProbe:
           httpGet:
             path: /health
@@ -50,4 +52,12 @@ spec:
           limits:
             cpu: "1"
             memory: "256Mi"
+      volumeMounts:
+        - name: gcp-sa
+          mountPath: /var/secrets/gcp
+          readOnly: true
+      volumes:
+      - name: gcp-sa
+        secret:
+          secretName: gcp-sa
       terminationGracePeriodSeconds: 30
