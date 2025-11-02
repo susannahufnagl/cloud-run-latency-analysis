@@ -1,11 +1,53 @@
-apiVersion: v1
-kind: Service
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: lat-bench
 spec:
-  type: NodePort
+  replicas: 1
   selector:
-    app: lat-bench
-  ports:
-  - port: 8080
-    targetPort: 8080
+    matchLabels:
+      app: lat-bench
+  template:
+    metadata:
+      labels:
+        app: lat-bench
+    spec:
+      containers:
+      - name: ce-cb-go
+        image: ce-cb-go:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PORT
+          value: "8080"
+        - name: PROJECT
+          value: project-accountsec
+        - name: PROJECT_ID
+          value: project-accountsec
+        - name: GOOGLE_CLOUD_PROJECT
+          value: project-accountsec
+        - name: TOPIC
+          value: cloudrun-broker-single
+        - name: TOPIC_ID
+          value: cloudrun-broker-single
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 2
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "128Mi"
+          limits:
+            cpu: "1"
+            memory: "256Mi"
+      terminationGracePeriodSeconds: 30
