@@ -561,3 +561,41 @@ curl -sS http://192.168.49.2:30080/health
 
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml
+
+
+## Port forward im Vordergrund starten um von lokalen computer oder hier der vm auf den Üod im Kubernetes Cluster zuzugreifen
+
+POD=$(kubectl get pods -l app=lat-bench -o jsonpath='{.items[0].metadata.name}')
+kubectl port-forward pod/$POD 8080:8080
+
+auf anderer vm terminal curl -i http://127.0.0.1:8080/health
+darüberhinaus 
+curl -i http://127.0.0.1:8080/send/nobatch
+curl -i http://127.0.0.1:8080/send/batch
+
+1. auf vm ein lokales image in Minikube-node öaden
+
+# auf der VM: dein lokales Image in den Minikube-Node laden
+minikube image load ce-cb-go:latest
+
+2. SA secret wenn vm oder key neu sind 
+kubectl delete secret gcp-sa 2>/dev/null || true
+kubectl create secret generic gcp-sa --from-file=key.json=./key.json
+
+
+3. Ready? verifzieren 
+
+kubectl get deploy lat-bench
+kubectl get pods -l app=lat-bench -o wide
+kubectl logs deploy/lat-bench --tail=50
+
+
+Port forward im vordergrund und dann wie oben oder im hintergrund
+
+URL="$(minikube service lat-bench --url)"
+curl -i "$URL/health" 
+curl -i "$URL/send/nobatch"
+curl -i "$URL/send/batch"         
+
+STAGE=3 CE_BASE="$URL" bash ~/ba/scripts/run_all_independent_0.sh
+STAGE=3 CE_BASE="$URL" bash ~/ba/scripts/run_all_concurrent_0.sh

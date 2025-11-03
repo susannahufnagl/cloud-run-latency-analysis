@@ -17,3 +17,4 @@ env/
 *.zip
 *.tar
 *.gz
+key.json 

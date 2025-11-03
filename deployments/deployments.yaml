@@ -32,7 +32,7 @@ spec:
         - name: TOPIC_ID
           value: cloudrun-broker-single
         - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: /var/secrets/gcp/key.json
+          value: ~/ba/key.json
         readinessProbe:
           httpGet: { path: /health, port: 8080 }
           periodSeconds: 5           # alle 5s prüfen
