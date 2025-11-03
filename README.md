@@ -552,7 +552,7 @@ kubectl logs -l app=lat-bench --tail=100
 
 ```bash
 minikube service lat-bench-svc --url
-# Ausgabe z.B. http://192.168.49.2:30080
+
 curl -sS http://192.168.49.2:30080/health
 ```
 

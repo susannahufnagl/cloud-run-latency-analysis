@@ -34,17 +34,21 @@ spec:
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /var/secrets/gcp/key.json
         readinessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          periodSeconds: 2
-          failureThreshold: 3
+          httpGet: { path: /health, port: 8080 }
+          periodSeconds: 5           # alle 5s prüfen
+          failureThreshold: 60       # bis zu 5 Minuten Zeit für ADC/Pub/Sub-Init
+          timeoutSeconds: 2
         livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
+          httpGet: { path: /, port: 8080 }     # NICHT /health!
+          initialDelaySeconds: 5               # warte kurz bis Server lauscht
           periodSeconds: 10
           failureThreshold: 3
+          timeoutSeconds: 2
+        startupProbe:                           # optional, sehr hilfreich
+          httpGet: { path: /health, port: 8080 }
+          periodSeconds: 5
+          failureThreshold: 120                 # bis zu 10 Minuten für erstes Ready
+          timeoutSeconds: 2
         resources:
           requests:
             cpu: "250m"
@@ -61,3 +65,6 @@ spec:
         secret:
           secretName: gcp-sa
       terminationGracePeriodSeconds: 30
+
+
+ 
