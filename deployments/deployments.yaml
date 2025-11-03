@@ -52,10 +52,10 @@ spec:
           limits:
             cpu: "1"
             memory: "256Mi"
-      volumeMounts:
-        - name: gcp-sa
-          mountPath: /var/secrets/gcp
-          readOnly: true
+        volumeMounts:
+          - name: gcp-sa
+            mountPath: /var/secrets/gcp
+            readOnly: true
       volumes:
       - name: gcp-sa
         secret:
