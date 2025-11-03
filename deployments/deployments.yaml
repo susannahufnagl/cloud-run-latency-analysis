@@ -32,15 +32,15 @@ spec:
         - name: TOPIC_ID
           value: cloudrun-broker-single
         - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: ~/ba/key.json
+          value: /var/secrets/gcp/key.json
         readinessProbe:
           httpGet: { path: /health, port: 8080 }
           periodSeconds: 5           # alle 5s prüfen
           failureThreshold: 60       # bis zu 5 Minuten Zeit für ADC/Pub/Sub-Init
           timeoutSeconds: 2
         livenessProbe:
-          httpGet: { path: /, port: 8080 }     # NICHT /health!
-          initialDelaySeconds: 5               # warte kurz bis Server lauscht
+          httpGet: { path: /, port: 8080 }     
+          initialDelaySeconds: 5               #warte kurz bis Server lauscht
           periodSeconds: 10
           failureThreshold: 3
           timeoutSeconds: 2
