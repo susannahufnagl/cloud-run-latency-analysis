@@ -52,6 +52,6 @@ terraform.rc
 # Project data
 /data/*
 !/data/.gitkeep
-
+key.json
 # Archive optional ignorieren
 # archive/*

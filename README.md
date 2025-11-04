@@ -573,7 +573,21 @@ darüberhinaus
 curl -i http://127.0.0.1:8080/send/nobatch
 curl -i http://127.0.0.1:8080/send/batch
 
-1. auf vm ein lokales image in Minikube-node öaden
+1. minikube start 
+2. minikube status    <!-- # status abrufen  -->
+
+gewollte antwort : 
+<!-- susannahufnagl@ce-latency-bench:~/ba$ minikube status 
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured -->
+
+3. Einmalig die addons aktvieren: minikube addons enable dashboard
+
+3. auf vm ein lokales image in Minikube-node laden
 
 # auf der VM: dein lokales Image in den Minikube-Node laden
 minikube image load ce-cb-go:latest
