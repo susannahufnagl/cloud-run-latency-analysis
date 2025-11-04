@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lat-bench-gvisor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lat-bench-gvisor
+  template:
+    metadata:
+      labels:
+        app: lat-bench-gvisor
+    spec:
+      runtimeClassName: gvisor
+      containers:
+      - name: ce-cb-go
+        image: ce-cb-go:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PORT
+          value: "8080"
+        - name: PROJECT
+          value: project-accountsec
+        - name: PROJECT_ID
+          value: project-accountsec
+        - name: GOOGLE_CLOUD_PROJECT
+          value: project-accountsec
+        - name: TOPIC
+          value: cloudrun-broker-single
+        - name: TOPIC_ID
+          value: cloudrun-broker-single
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/secrets/gcp/key.json
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 5
+          failureThreshold: 60
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+          timeoutSeconds: 2
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 5
+          failureThreshold: 120
+          timeoutSeconds: 2
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "128Mi"
+          limits:
+            cpu: "1"
+            memory: "256Mi"
+        volumeMounts:
+        - name: gcp-sa
+          mountPath: /var/secrets/gcp
+          readOnly: true
+      volumes:
+      - name: gcp-sa
+        secret:
+          secretName: gcp-sa
+      terminationGracePeriodSeconds: 30
+
+
