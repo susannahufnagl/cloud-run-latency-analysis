@@ -22,12 +22,13 @@ STAGE_LABEL="${STAGE_LABEL:-S${STAGE}_concurrent}"  # beim independent-Skript: S
 TS_UTC="$(date -u +"%Y-%m-%d_%H-%M-%S")"
 RUN_ID="$(printf 'run-%04d' $(( RANDOM % 10000 )))"   # oder zähler, s.u.
 OUTDIR="${BASE_RESULTS_DIR}/${STAGE_LABEL}/${TS_UTC}_${RUN_ID}"
+CHANNEL="${CHANNEL:-node}"
 mkdir -p "$OUTDIR"
 
-#zentrale Index-Datei (Append-only)
+#zentrale Index-Datei
 MASTER_INDEX="${BASE_RESULTS_DIR}/index.csv"
 if [[ ! -f "$MASTER_INDEX" ]]; then
-  echo "ts_utc,stage,run_id,dir,project,instance,zone,count,sleep,timeout,ce_base,cr_base" > "$MASTER_INDEX"
+  echo "ts_utc,stage,run_id,dir,project,instance,zone,count,sleep,timeout,ce_base,cr_base,channel" > "$MASTER_INDEX"
 fi
 
 
