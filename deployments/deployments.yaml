@@ -15,6 +15,7 @@ spec:
       containers:
       - name: ce-cb-go
         image: ce-cb-go:latest
+        imagePullPolicy: Never
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
