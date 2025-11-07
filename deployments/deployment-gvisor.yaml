@@ -16,7 +16,7 @@ spec:
       containers:
       - name: ce-cb-go
         image: ce-cb-go:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Never
         ports:
         - containerPort: 8080
         env:
@@ -72,5 +72,4 @@ spec:
         secret:
           secretName: gcp-sa
       terminationGracePeriodSeconds: 30
-
 

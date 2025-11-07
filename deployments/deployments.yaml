@@ -16,7 +16,10 @@ spec:
       - name: ce-cb-go
         image: ce-cb-go:latest
         imagePullPolicy: Never
+<<<<<<< HEAD
         imagePullPolicy: IfNotPresent
+=======
+>>>>>>> 9c0b343914e876f9ef30ca3b9e96a81c15b95ffa
         ports:
         - containerPort: 8080
         env:
