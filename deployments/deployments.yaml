@@ -21,22 +21,22 @@ spec:
 =======
 >>>>>>> 9c0b343914e876f9ef30ca3b9e96a81c15b95ffa
         ports:
-        - containerPort: 8080
+          - containerPort: 8080
         env:
-        - name: PORT
-          value: "8080"
-        - name: PROJECT
-          value: project-accountsec
-        - name: PROJECT_ID
-          value: project-accountsec
-        - name: GOOGLE_CLOUD_PROJECT
-          value: project-accountsec
-        - name: TOPIC
-          value: cloudrun-broker-single
-        - name: TOPIC_ID
-          value: cloudrun-broker-single
-        - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: /var/secrets/gcp/key.json
+          - name: PORT
+            value: "8080"
+          - name: PROJECT
+            value: project-accountsec
+          - name: PROJECT_ID
+            value: project-accountsec
+          - name: GOOGLE_CLOUD_PROJECT
+            value: project-accountsec
+          - name: TOPIC
+            value: cloudrun-broker-single
+          - name: TOPIC_ID
+            value: cloudrun-broker-single
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /var/secrets/gcp/key.json
         readinessProbe:
           httpGet: { path: /health, port: 8080 }
           periodSeconds: 5           #alle 5s prüfen
