@@ -52,6 +52,35 @@ When you're ready to make this README your own, just edit this file and use the 
 
 Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
 
+## Latency analysis toolkit
+
+The repository now contains an automated analysis flow that ingests every
+`latencies_*.csv` stored below `Testresults/` and produces per-run summaries,
+category-level aggregates and plots for all CE/CR batch and nobatch scenarios.
+
+```bash
+cd ba
+python -m pip install --upgrade pandas seaborn matplotlib
+python analysis/ematholip.py \
+  --testresults-root Testresults \
+  --output-dir results/ematholip
+```
+
+Generated artefacts:
+
+- `results/ematholip/run_summary.csv` – statistics (mean, p50, p95, p99, min/max) for
+  each CSV plus metadata (stage, mode, workload, run timestamp, sampling window).
+- `results/ematholip/category_summary.csv` – grouped averages per stage/mode/workload,
+  useful to compare “S0 concurrent CE batch” vs “S1 concurrent CE batch” etc.
+- `results/ematholip/phase_deltas.csv` – incremental deltas between the phases
+  (e.g. stage 1 − stage 0) for every metric so you can attribute latency increases to
+  each additional component.
+- `results/ematholip/figures/boxplot_{client,server}_*.png` – boxplots per workload
+  that visualize the distribution per stage and execution mode.
+
+Every run also writes a `manifest.json` with absolute paths to all artefacts and a
+timestamp, so you can keep multiple analysis drops side-by-side.
+
 ## Name
 Choose a self-explaining name for your project.
 
