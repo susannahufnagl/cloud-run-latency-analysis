@@ -116,6 +116,7 @@ def gather_records(csv_paths: Iterable[Path]) -> tuple[pd.DataFrame, pd.DataFram
             "run_id": meta.run_id,
             "run_started_at": meta.run_started_at.isoformat(),
             "file_started_at": meta.file_started_at.isoformat(),
+            "run_date": meta.run_started_at.date().isoformat(),
             "total_samples": total_count,
             "successful_samples": int(success.shape[0]),
             "error_rate": float(1 - (success.shape[0] / total_count)) if total_count else None,
@@ -131,6 +132,7 @@ def gather_records(csv_paths: Iterable[Path]) -> tuple[pd.DataFrame, pd.DataFram
         sample_subset["stage_label"] = meta.stage_label
         sample_subset["mode"] = meta.mode
         sample_subset["workload"] = meta.workload
+        sample_subset["run_date"] = meta.run_started_at.date().isoformat()
         sample_frames.append(sample_subset)
 
     run_summary = pd.DataFrame(records)
@@ -139,7 +141,7 @@ def gather_records(csv_paths: Iterable[Path]) -> tuple[pd.DataFrame, pd.DataFram
 
 
 def aggregate_categories(run_summary: pd.DataFrame) -> pd.DataFrame:
-    key_cols = ["stage_num", "stage_label", "mode", "workload"]
+    key_cols = ["run_date", "stage_num", "stage_label", "mode", "workload"]
     metric_cols = [
         col
         for col in run_summary.columns
@@ -157,7 +159,7 @@ def aggregate_categories(run_summary: pd.DataFrame) -> pd.DataFrame:
 def compute_phase_deltas(category_summary: pd.DataFrame) -> pd.DataFrame:
     metric_cols = [c for c in category_summary.columns if c.startswith(("client_", "server_"))]
     delta_frames = []
-    for (mode, workload), group in category_summary.groupby(["mode", "workload"]):
+    for (run_date, mode, workload), group in category_summary.groupby(["run_date", "mode", "workload"]):
         sorted_group = group.sort_values("stage_num").copy()
         for col in metric_cols:
             sorted_group[f"{col}_delta_prev"] = sorted_group[col].diff()
@@ -220,7 +222,7 @@ def main() -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     run_summary, samples = gather_records(csv_paths)
-    run_summary.sort_values(["stage_num", "mode", "workload", "run_folder"], inplace=True)
+    run_summary.sort_values(["run_date", "stage_num", "mode", "workload", "run_folder"], inplace=True)
     run_summary.to_csv(output_dir / "run_summary.csv", index=False)
 
     category_summary = aggregate_categories(run_summary)
