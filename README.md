@@ -42,603 +42,330 @@ Use the built-in continuous integration in GitLab.
 - [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
 - [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
 
-***
 
-# Editing this README
+# Stage 0: Basisarchitektur
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+# 1. alles wieder stoppen, was auf 8080 lauscht 
 
-## Suggestions for a good README
+## z.B.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+sudo pkill -f producer || true
+pgrep  -a producer  schauen ob er gestoptt ist 
+docker stop lat-bench 2>/dev/null || true
 
-## Latency analysis toolkit
+sudo systemctl start containerd
+sudo nerdctl rm -f lat-bench   # Container weg
+sudo systemctl stop containerd 
 
-The repository now contains an automated analysis flow that ingests every
-`latencies_*.csv` stored below `Testresults/` and produces per-run summaries,
-category-level aggregates and plots for all CE/CR batch and nobatch scenarios.
-
-```bash
-cd ba
-python -m pip install --upgrade pandas seaborn matplotlib
-python analysis/ematholip.py \
-  --testresults-root Testresults \
-  --output-dir results/ematholip
-```
-
-Generated artefacts:
-
-- `results/ematholip/run_summary.csv` – statistics (mean, p50, p95, p99, min/max) for
-  each CSV plus metadata (stage, mode, workload, run timestamp, sampling window).
-- `results/ematholip/category_summary.csv` – grouped averages per stage/mode/workload,
-  useful to compare “S0 concurrent CE batch” vs “S1 concurrent CE batch” etc.
-- `results/ematholip/phase_deltas.csv` – incremental deltas between the phases
-  (e.g. stage 1 − stage 0) for every metric so you can attribute latency increases to
-  each additional component.
-- `results/ematholip/figures/boxplot_{client,server}_*.png` – boxplots per workload
-  that visualize the distribution per stage and execution mode.
-
-Every run also writes a `manifest.json` with absolute paths to all artefacts and a
-timestamp, so you can keep multiple analysis drops side-by-side.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
-
-
-# Keep alive Optionen neu verbinden um Broken pipe zu verhindern 
-gcloud compute ssh ce-latency-bench --zone europe-west10-b -- \
-  -o ServerAliveInterval=30 -o ServerAliveCountMax=3
-
-sudo apt update && sudo apt install -y tmux
-
-# neue beständige session 
-
-tmux new -s bench
-
-
-# S0 ausführen lassen 
-#   VM starten 
-1. source .env.local
-2. vm up 
-3. vm ssh 
-4. ins repo lotsen und git pullen 
-
-# producer starten --> auch für S1
-
-cd ~/ba/services/Cloud-Run/go-producer   
-go mod tidy
-go build -o producer .
-
-./producer > /tmp/producer.log 2>&1 & # starten 
-#   läuft der producer wirklich? 
 sudo ss -lntp | egrep ':(80|8080)\b' || echo "nichts auf 80/8080"
-LISTEN 0      4096               *:8080            *:*    users:(("producer",pid=2980,fd=9))       
 
 
-
-
-#   Producer läuft & CE_BASE lokal:
-export CE_BASE="http://127.0.0.1:8080"
-set -a; source ~/ba/.env; set +a    # für CR_BASE in den CR-Tests
-bash ~/ba/scripts/run_all_concurrent_0.sh
-bash ~/ba/scripts/run_all_independent_0.sh
-
-
-## aktualisierte ersion 
-
-STAGE=0 bash ~/repo/scripts/run_all_concurrent_0.sh
-STAGE=0 bash ~/repo/scripts/run_all_independent_0.sh
-
-( # S2
-    ## Firewall Rules erfahren --> aus Lokal 
-    gcloud compute firewall-rules list --filter="name~8080"
-
-    ## Health Testen des lazfenden Prozesses und des LoadBalancers 
-
-    (# lokal
-    curl -i http://localhost:8080/health || tail -n 200 /tmp/producer.log
-
-    export PROJECT="${PROJECT:-${PROJECT_ID:-}}"
-    export TOPIC="${TOPIC:-${TOPIC_ID:-}}"
-
-    pkill -f 'producer' 2>/dev/null || true
-    cd ~/ba/services/Cloud-Run/go-producer
-    nohup ./producer > /tmp/producer.log 2>&1 &)
-
-
-    # checken ob die Project und Topic übergebne wurden 
-    tr '\0' '\n' < /proc/$PID/environ | egrep '^(PROJECT|TOPIC)=' || echo "ENV im Prozess fehlen"
-
-    # müssen nach dem starten des Producers hier übergeben werden oder inline wie hier
-
-
-    # alternatives
-
-    export PROJECT=project-accountsec
-    export TOPIC=cloudrun-broker-single
-    pkill -f producer 2>/dev/null || true
-    nohup ./producer > /tmp/producer.log 2>&1 &
-
-
-
-
-    # via Load Balancer
-    LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')
-    curl -i "http://$LB_IP/health"
-
-
-    ## Backend Gesundheit aus Sicht des LB
-
-    gcloud compute backend-services get-health be-s2 --global
-
-    ## Von wo kommen Verbindunegn an 8080 
-
-    sudo journalctl -u your-service | tail
-    # oder mit tcpdump
-    sudo tcpdump -n host 35.191.0.0/16 or host 130.211.0.0/22
-
-    # prüfen was an benötigten elementen für S2 schone existiert 
-
-    gcloud compute instance-groups unmanaged list --zones=europe-west10-b
-    gcloud compute instance-groups unmanaged list-instances mig-s2 --zone=europe-west10-b
-    gcloud compute health-checks describe hc-8080
-    gcloud compute backend-services list
-    gcloud compute url-maps list
-    gcloud compute target-http-proxies list
-    gcloud compute forwarding-rules list
-
-    # starten der Tests 
-
-    LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')
-    echo "LB_IP=$LB_IP" 
-
-    curl -i "http://$LB_IP/health"
-
-
-    export CE_BASE="http://$LB_IP:8080"
-    set -a; source ~/repo/.env; set +a    # für CR_BASE in den CR-Tests
-    bash ~/repo/scripts/run_all_concurrent_0.sh
-    bash ~/repo/scripts/run_all_independent_0.sh
-)
-
-# S1 tatsächlicher start verlauf zuvor
-
-# alle lauschenden Prozesse auf irgendeinen Port anzeigen lassen 
-
-sudo ss -lntp
-
-
-
-pkill -x producer || true
-sleep 1
-sudo ss -lntp | grep ':8080\b' || echo "Port 8080 frei"
-
-export PROJECT=project-accountsec
-export PROJECT_ID="$PROJECT"
-export GOOGLE_CLOUD_PROJECT="$PROJECT"
-
-export TOPIC=cloudrun-broker-single
-export TOPIC_ID="$TOPIC"
-
-export PORT=8080
-
-
-cd ~/ba/services/Cloud-Run/go-producer
-go version >/dev/null 2>&1 || sudo apt update && sudo apt install -y golang
-go build -o producer .
-
-
-./producer > /tmp/producer.log 2>&1 &
-sleep 1
-curl -i http://127.0.0.1:8080/health || tail -n 200 /tmp/producer.log
-
-
-## pgrep sucht alle laufenden Prozesse, deren Name exakt producer lautet
-# head n1 nimmt nur den ersten treffer falls mehrere. producer prozesse laufenden
-# ergebnis wird in pid gespeichert 
-## environ enthält alle umgebungsariablen mit denne der Prozess gestartet wurde
-pid=$(pgrep -x producer | head -n1)
-echo "PID=$pid"
-sudo tr '\0' '\n' < /proc/$pid/environ | egrep '^(PROJECT|TOPIC|PORT)='
-
-
-curl -i http://localhost:8080/health || tail -n 200 /tmp/producer.log # Der Load‑Balancer wurde in dieser Phase so konfiguriert, dass er den Frontend‑Port 8080 annahm und eins‑zu‑eins auf Port 8080 der VM weiterleitete. Das ist technisch möglich – Google‑Cloud‑Load‑Balancer unterstützen 80, 8080 und 443 als öffentliche Ports – und vereinfacht die Messung, weil kein zusätzlicher URL‑Map‑Hop oder Port‑Übersetzung stattfindet.
-
-
-LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')  #lokal aufrufen 
-echo "LB_IP=$LB_IP"   
-<!-- die loadbalcner anfrage geh tnur über den lokalen host -->
-
-
-curl -i "http://$LB_IP/health" #lokal aufrufen
-
-## Tests ausführen 
-
-STAGE=1 CE_BASE="http://$LB_IP:8080" bash ~/ba/scripts/run_all_concurrent_0.sh
-STAGE=1 CE_BASE="http://$LB_IP:8080" bash ~/ba/scripts/run_all_independent_0.sh
-
-
-# S2 Docker Version 
-
-# 0) Ziel & Prinzip
-
-Konstante halten:  LB, IP, Port (8080), IAM/ADC, Topic, Testskripte, COUNT/SLEEP identisch lassen
-Einzige Variable:** Prozess läuft vorher direkt auf der VM, jetzt im Container
-
-
-
-# A) Basis (Referenz) – Binary auf der VM
-
-1. Aufräumen & Port prüfen
-
-```bash
-pkill -x producer || true --> müssen wir nicht machen außer wir greifen nicht aus docker grade darauf zu 
-alternativ nur: docker restart lat-bench
-sudo ss -lntp | grep ':8080\b' || echo "Port 8080 frei"
-
-```
-Antwort:
-LISTEN 0      4096         0.0.0.0:8080      0.0.0.0:*    users:(("docker-proxy",pid=5068,...))
-LISTEN 0      4096            [::]:8080         [::]:*    users:(("docker-proxy",pid=5074,...))
-
-
-
-Das heißt:
-Port 8080 auf deiner VM wird vom docker-proxy „überwacht“.
-Der docker-proxy ist der Prozess, der alles, was an der VM auf 8080 ankommt, an deinen Container weiterleitet.
-Also:
-Client → VM:8080 → docker-proxy → Container (App auf 8080)
-
-3. Was du jetzt machen kannst
-Du kannst direkt prüfen, ob dein Container auch wirklich läuft und reagiert:
-curl -fsS http://127.0.0.1:8080/health && echo "Container erreichbar ✅"
-
-
-2. Env & App starten (wie gehabt)
-
-```bash
-export PROJECT=project-accountsec
-export GOOGLE_CLOUD_PROJECT="$PROJECT"
-export TOPIC=cloudrun-broker-single
-export TOPIC_ID="$TOPIC"
-export PORT=8080
+# 2. Producer bauen und testen 
 
 cd ~/ba/services/Cloud-Run/go-producer
 go build -o producer .
+set -a; source ~/ba/.env; set +a
+export GCP_PROJECT="$PROJECT"
+export GOOGLE_CLOUD_PROJECT="$PROJECT"
+export TOPIC_ID="$TOPIC"
+export GOOGLE_APPLICATION_CREDENTIALS=~/ba/key.json
 ./producer > /tmp/producer.log 2>&1 &
-```
-
-3. Health & LB testen
-
-```bash
+sleep 2
+tail -n 20 /tmp/producer.log               
 curl -fsS http://127.0.0.1:8080/health && echo ok
-LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')
-curl -fsS "http://$LB_IP:8080/health" && echo LB ok
-```
 
-4. Messlauf (Referenz)
+# 3. Test run 
 
-```bash
-CR_BASE="https://<dein-cloud-run>.europe-west10.run.app" \
-CE_BASE="http://$LB_IP:8080" \
-STAGE=1 \
-bash ~/ba/scripts/run_all_concurrent_0.sh
+CE_BASE="http://127.0.0.1:8080" CHANNEL=bare STAGE=0 \
+  bash ~/ba/scripts/run_all_concurrent_0.sh
+CE_BASE="http://127.0.0.1:8080" CHANNEL=bare STAGE=0 \
+  bash ~/ba/scripts/run_all_independent_0.sh
 
-CR_BASE="https://<dein-cloud-run>.europe-west10.run.app" \
-CE_BASE="http://$LB_IP:8080" \
-STAGE=1 \
-bash ~/ba/scripts/run_all_independent_0.sh
-```
 
-→ CSVs sichern (Ordnerpfad aus Skript-Ausgabe notieren)
 
----
+# Stage 1: S0+ LB/ HTTP
 
-# B) Containerisiert – **einziger Unterschied: Prozess läuft im Container**
 
-1. Binary stoppen, Container sauber neu starten
+# 1. alles wieder stoppen, was auf 8080 lauscht 
 
-```bash
-pkill -x producer || true
-docker rm -f lat-bench 2>/dev/null || true
-sudo ss -lntp | grep ':8080\b' || echo "Port 8080 frei"
-```
+## z.B.
 
-2. Env setzen (gleich wie oben)
+sudo pkill -f producer || true
+pgrep  -a producer  schauen ob er gestoptt ist 
+docker stop lat-bench 2>/dev/null || true
 
-```bash
-export PROJECT=project-accountsec
+sudo systemctl start containerd
+sudo nerdctl rm -f lat-bench   # Container weg
+sudo systemctl stop containerd 
+
+sudo ss -lntp | egrep ':(80|8080)\b' || echo "nichts auf 80/8080"
+
+
+# 2. Producer bauen und testen 
+
+cd ~/ba/services/Cloud-Run/go-producer
+go build -o producer .
+set -a; source ~/ba/.env; set +a
+export GCP_PROJECT="$PROJECT"
 export GOOGLE_CLOUD_PROJECT="$PROJECT"
-export TOPIC=cloudrun-broker-single
 export TOPIC_ID="$TOPIC"
-export PORT=8080
-```
-
-3. Container Cloud-Run-artig starten (**gleicher Host-Port 8080!**)
-
-```bash
-docker run -d --name lat-bench --restart=always \
-  -p 8080:8080 \
-  --cpus=1 --memory=1024m \
-  --read-only \
-  --tmpfs /tmp:rw,nosuid,nodev,noexec,size=256m \
-  --security-opt no-new-privileges \
-  --pids-limit=4096 --cap-drop ALL \
-  --user 65532:65532 \
-  --stop-timeout 30 \
-  -e PORT -e PROJECT -e GOOGLE_CLOUD_PROJECT -e TOPIC -e TOPIC_ID \
-  ce-cb-go:latest
-```
-
-Wichtig: App im Container muss auf `0.0.0.0:$PORT` lauschen
+export GOOGLE_APPLICATION_CREDENTIALS=~/ba/key.json
+./producer > /tmp/producer.log 2>&1 &
+sleep 2
+tail -n 20 /tmp/producer.log               
+curl -fsS http://127.0.0.1:8080/health && echo ok
 
 
-4. Health & LB testen (Pfad identisch)
 
-```bash
-curl -fsS http://127.0.0.1:8080/health && echo ok ## anscheinend bei restart hier erst anfangen und docker merkt sich die variablen 
-docker logs --tail 100 -f lat-bench
-## docker exec -it lat-bench env | egrep 'PROJECT|TOPIC|PORT'
-LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')
+
+
+# 3.	LB wieder testen:
+## a.	Lokal: 
+
+LB_S1_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global \
+        --format='value(IPAddress)')
 echo "LB_IP=$LB_IP"
 
-curl -fsS "http://$LB_IP:8080/health" && echo LB ok
-```
+## b.	Auf der VM: 
 
-5. Messlauf (Container)
+export LB_S1_IP=34.8.201.151
+curl -fsS http://$LB_S1_IP/health
 
-```bash
+# 4.	Ist das Backend healthy:
 
-sh
-```
+gcloud compute backend-services get-health be-s2 --global
 
+# 5.	Testrun durchführen 
 
-STAGE=2 CE_BASE="http://$LB_IP" bash ~/ba/scripts/run_all_concurrent_0.sh
-STAGE=2 CE_BASE="http://$LB_IP" bash ~/ba/scripts/run_all_independent_0.sh
-
-
----
-
-# C) Auswertung & Checks
-
-* Vergleich: nutze die zwei CSV-Sets (Basis vs Container) mit identischen COUNT/SLEEP
-* Relevante Spalten: `client_total_ms` (End-to-End), `server_latency_ms` (aus deiner App)
-* Delta Containerisierung = Mittelwert(Container) − Mittelwert(Basis)
-
-Sanity-Checks
-
-```bash
-# zeigt, dass Host:8080 vom docker-proxy gemappt ist
-sudo ss -lntp | egrep ':(8080)\b'
-
-# lauscht die App im Container?
-docker exec -it lat-bench sh -c 'ss -lntp | grep ":8080 " || netstat -lntp | grep ":8080 "'
-
-# Env im Container
-docker exec -it lat-bench env | egrep 'PROJECT|TOPIC|PORT'
--- ```
-# von au0en schauen ob docker container lauscht \ 
-
-curl -fsS http://127.0.0.1:8080/health && echo "Container erreichbar ✅"
-
-<!--  geht weil docker-proxy den Host-Port 8080 auf den Container Port weiterleitet  -->
-
-# D) Warum das sauber ist (Port-Story in 1 Minute)
-
-
-# E) Häufige Stolpersteine (fix in Sekunden)
-
-* 8080 belegt → `docker rm -f lat-bench` oder Mapping prüfen
-* App hört nur auf `127.0.0.1` → in Code `0.0.0.0` setzen
-* LB spricht anderen Port → immer `:8080` durchgängig (Frontend, Backend, VM, Container)
-* Doppelt laufende Binary + Container → vorher immer `pkill -x producer`
-
-
-## Neustarten:
-
-prüfen ob Docker läuft:
-
-sudo systemctl status docker --no-pager
-
-schauen ob Container existiert: docker ps -a
+CE_BASE="http://$LB_S1_IP" CHANNEL=lb STAGE=1 \
+  bash scripts/run_all_concurrent_0.sh
+CE_BASE="http://$LB_S1_IP" CHANNEL=lb STAGE=1 \
+  bash scripts/run_all_independent_0.sh
 
 
 
-### 1) Minikube starten (Docker-Treiber)
+# Stage 2: (S1+ Containerisierung in containered)
 
-```bash
-minikube start --driver=docker
-kubectl get nodes ##  <!-- gibt overview über die present nodes in dem Kubernetes cluser  -->, also ob unser Minikube cluster wirklich läuft
+# 1. alles stoppen was auf 8080
 
-## Falls Kubernetes noch nicht nsatlliert ist machen wir das so: minikube kubectl -- get nodes
+## z.B 
+pkill -x producer || true
+sudo pkill -f 'socat.*8080' 2>/dev/null || true
+sleep 1
+sudo ss -lntp | grep ':8080\b' || echo "Port 8080 frei"
 
-<!-- 
-## Wir setzen alias für minikube kubect1 : alias kubectl="minikube kubectl --" -->
---> was wir bis hier hin gemacht haben_ Cluster läuft, ce-cb-go:latest ist schon in Minikube geladen
 
-Nächste Schritte, ohne Yaml, 1. Deployment erstellen
+# 2.	Falls Minikube noch läuft, das einmal herunterfahren  und stoppen
 
-```
+minikube delete --all --purge
+
+# 3.	Cache leeren
+
+sudo sync && echo 3 | sudo tee /proc/sys/vm/drop_caches
+
+
+# 4.	Images neu laden oder builds nachziehen --> habe ich zuvor in docker build gebaut 
+
+sudo nerdctl load < ce-cb-go.tar
+
+# 5.	Key anlegen 
+sudo rm -rf /home/susannahufnagl/.gcp/key.json
+sudo install -m 600 ~/ba/key.json /home/susannahufnagl/.gcp/sa-key.json
+
+
+
+
+# 6.	Starten des Diensts
+sudo nerdctl rm -f lat-bench || true
+sudo nerdctl run -d --name lat-bench \
+  --runtime runc --net host \
+  -e PORT=8080 \
+  -e PROJECT=project-accountsec \
+  -e TOPIC=cloudrun-broker-single \
+  -v /home/susannahufnagl/.gcp/key.json:/var/secrets/gcp/key.json:ro \
+  ce-cb-go:latest
+
+# 7.	Testen 
+
+curl -fsS 127.0.0.1:8080/health
+sudo ss -lntp | grep ':8080\b'
+sudo nerdctl logs lat-bench | tail
+
+# 8.	Logs anschauen bei problemen 
+
+sudo nerdctl logs lat-bench | tail -n 80'
+
+# 9.	Wenn contianer läuft --> Kontrolle 
+
+sudo nerdctl ps 
+--> status der lat-bench soll UP sein
+
+# 10.	LB wieder anbinden:
+
+Lokal: 
+LB_IP=$(gcloud compute forwarding-rules describe fr-s2-http --global --format='value(IPAddress)')
+echo $LB_IP
+-->  34.8.201.151
+Health von Backend checken:
+
+gcloud compute backend-services get-health be-s2 --global
+
+Auf VM: 
+
+LB_S2_IP=34.8.201.151
+
+
+curl -fsS http://127.0.0.1:8080/health 
+
+curl -fsS http://$LB_S2_IP/health
+
+# 11.	Ist das Backend healthy?
+
+gcloud compute backend-services get-health be-s2 --global
+
+# 12.	allgemeiner Testrun:
+
+CE_BASE="http://$LB_S2_IP" CHANNEL=lb STAGE=2 \
+  bash scripts/run_all_concurrent_0.sh
+CE_BASE="http://$LB_S2_IP" CHANNEL=lb STAGE=2 \
+  bash scripts/run_all_independent_0.sh
+
+
+
+
+
+
+
+
+
+
+
+Stage 3 und 4: 
+
+# 1.	Minikube deleten falls noch nicht getan:
+sudo -E minikube delete --all --purge
+# 2.	Cache leeren 
+sudo sync && echo 3 | sudo tee /proc/sys/vm/drop_caches
+
+sudo rm -f /tmp/juju-mk*
+
+# 3.	
+sudo sysctl fs.protected_regular=0
+
+
+# 4.	minikube neu starten 
+
+
+export MINIKUBE_HOME=/home/susannahufnagl/.minikube
+export KUBECONFIG=/home/susannahufnagl/.kube/config
+export CHANGE_MINIKUBE_NONE_USER=true
+
+sudo apt update
+sudo apt install -y iptables
+
+
+sudo -E minikube start \
+  --driver=none \
+  --container-runtime=containerd \
+
+## Evtl
+sudo chown -R susannahufnagl:susannahufnagl /home/susannahufnagl/.minikube /home/susannahufnagl/.kube
+sudo chmod -R u+wrx /home/susannahufnagl/.minikube
+
+
+sudo -E minikube addons enable gvisor
 minikube image load ce-cb-go:latest
+minikube status
 
-### 2) Docker-Build in Minikube (damit K8s das Image findet)
+# 5.	Containered restarten (eventuell noch früher machen) 
 
-```bash
-# Docker-CLI auf den Minikube-Daemon umbiegen
-eval $(minikube -p minikube docker-env)
-
-# Im Projektordner mit deinem Dockerfile:
-docker build -t lat-bench:local .
-
---> antwort f05e64a363f4   gcr.io/k8s-minikube/kicbase:v0.0.48   "/usr/local/bin/entr…"   7 minutes ago   Up 7 minutes   127.0.0.1:32768->22/tcp, 127.0.0.1:32769->2376/tcp, 127.0.0.1:32770->5000/tcp, 127.0.0.1:32771->8443/tcp, 127.0.0.1:32772->32443/tcp   minikube
-```
-
-### 3) Deployment + Service anlegen
-
-Erstelle `lat-bench-deployment.yaml`:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: lat-bench
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: lat-bench
-  template:
-    metadata:
-      labels:
-        app: lat-bench
-    spec:
-      containers:
-      - name: lat-bench
-        image: lat-bench:local
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: PORT
-          value: "8080"
-        - name: GOOGLE_CLOUD_PROJECT
-          value: "DEIN_PROJECT_ID"
-        - name: PROJECT
-          value: "DEIN_PROJECT_ID"
-        - name: PROJECT_ID
-          value: "DEIN_PROJECT_ID"
-        - name: TOPIC
-          value: "DEIN_TOPIC"
-        - name: TOPIC_ID
-          value: "DEIN_TOPIC"
-        ports:
-        - containerPort: 8080
-```
-
-Erstelle `lat-bench-service.yaml`:
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: lat-bench-svc
-spec:
-  type: NodePort
-  selector:
-    app: lat-bench
-  ports:
-  - port: 80
-    targetPort: 8080
-    nodePort: 30080   # fest, damit du stabile URL hast
-```
-
-### 4) Anwenden & prüfen
-
-```bash
-kubectl apply -f lat-bench-deployment.yaml
-kubectl apply -f lat-bench-service.yaml
-
-kubectl get pods -o wide
-kubectl logs -l app=lat-bench --tail=100
-```
-
-### 5) URL holen & Healthcheck
-
-```bash
-minikube service lat-bench-svc --url
-
-curl -sS http://192.168.49.2:30080/health
-```
+sudo systemctl restart containerd
 
 
-# Anwenden der beiden yamls 
+# 6.	Containered status abrufen 
+sudo systemctl status containerd --no-pager
+sudo crictl info | grep RuntimeName
 
-kubectl apply -f deployment.yaml
-kubectl apply -f service.yaml
+## a.	Eventuell defektte config entfernen und neu anlegen 
+sudo systemctl stop containerd
+sudo pkill -f 'containerd-shim' || true
+sudo mv /etc/containerd/config.toml /etc/containerd/config.toml.broken-$(date +%s)
+sudo containerd config default | sudo tee /etc/containerd/config.toml >/dev/null
+
+## b.	Containernd wieder starten und hochkommen lassen
+
+sudo systemctl daemon-reload
+sudo systemctl restart containerd
+sudo systemctl status containerd --no-pager
+sudo crictl info | grep RuntimeName
 
 
-## Port forward im Vordergrund starten um von lokalen computer oder hier der vm auf den Üod im Kubernetes Cluster zuzugreifen
 
-POD=$(kubectl get pods -l app=lat-bench -o jsonpath='{.items[0].metadata.name}')
-kubectl port-forward pod/$POD 8080:8080
+# 7.	alle Resetzen und Neuaufsetzen 
 
-auf anderer vm terminal curl -i http://127.0.0.1:8080/health
-darüberhinaus 
-curl -i http://127.0.0.1:8080/send/nobatch
-curl -i http://127.0.0.1:8080/send/batch
+# Deployments/Services säubern (ignoriere Fehler, falls nicht vorhanden)
 
-1. minikube start 
-2. minikube status    <!-- # status abrufen  -->
+kubectl delete deploy lat-bench lat-bench-gvisor 2>/dev/null || true
+kubectl delete svc   lat-bench lat-bench-gvisor 2>/dev/null || true
+kubectl delete secret gcp-sa 2>/dev/null || true   
 
-gewollte antwort : 
-<!-- susannahufnagl@ce-latency-bench:~/ba$ minikube status 
-minikube
-type: Control Plane
-host: Running
-kubelet: Running
-apiserver: Running
-kubeconfig: Configured -->
 
-3. Einmalig die addons aktvieren: minikube addons enable dashboard
-
-3. auf vm ein lokales image in Minikube-node laden
-
-# auf der VM: dein lokales Image in den Minikube-Node laden
-minikube image load ce-cb-go:latest
-
-2. SA secret wenn vm oder key neu sind 
-kubectl delete secret gcp-sa 2>/dev/null || true
 kubectl create secret generic gcp-sa --from-file=key.json=./key.json
+kubectl apply -f deployments/deployments.yaml
+kubectl apply -f deployments/deployment-gvisor.yaml
+kubectl apply -f deployments/service.yaml
+kubectl apply -f deployments/service-gvisor.yaml
 
 
-3. Ready? verifzieren 
+kubectl get pods -A -o wide
+kubectl get svc -A
+kubectl get 
+kubectl get runtimeclass
+kubectl get node -o wide  
+kubectl get node -o wide        # CONTAINER-RUNTIME sollte containerd zeigen
+sudo crictl info | grep RuntimeName
+sudo crictl ps | head
 
-kubectl get deploy lat-bench
-kubectl get pods -l app=lat-bench -o wide
-kubectl logs deploy/lat-bench --tail=50
 
 
-Port forward im vordergrund und dann wie oben oder im hintergrund
+8.	Kleiner Check 
 
-URL="$(minikube service lat-bench --url)"
-curl -i "$URL/health" 
-curl -i "$URL/send/nobatch"
-curl -i "$URL/send/batch"         
+´
 
-STAGE=3 CE_BASE="$URL" bash ~/ba/scripts/run_all_independent_0.sh
-STAGE=3 CE_BASE="$URL" bash ~/ba/scripts/run_all_concurrent_0.sh
+a.	LB testen: 
+LB_IP=$(gcloud compute forwarding-rules describe fr-s7-http --global --format='value(IPAddress)')  34.36.203.245
+
+b.	export LB_S4_IP=34.36.203.245, 
+c.	echo $LB_S4_IP
+d.	curl -i http://$LB_S4_IP/health
+e.	auf vm schauen dass kube proxy auf 8080 lauscht und die Weiterleitung zu gVisor steht curl 127.0.0.1:8080/health
+
+9.	Listener auf 8080 einstellen mitels Socat, der dann die Anfragen von LB an Nodeport leitet: 
+
+Zuvor alles killen was auf den Port 8080 lauscht: 
+
+pkill -x producer || true, sudo pkill -f 'socat.*8080' || true
+
+S3: 
+
+MINI_IP=$(minikube ip)
+
+sudo apt-get install -y socat
+sudo pkill -f 'socat.*8080' 2>/dev/null || true
+
+sudo nohup socat \
+  TCP4-LISTEN:8080,reuseaddr,fork \
+  TCP4:${MINI_IP}:30082 \
+  >/tmp/socat-8080.log 2>&1 &
+
+S4: 
+
+MINI_IP=$(minikube ip)
+
+sudo apt-get install -y socat
+sudo pkill -f 'socat.*8080' 2>/dev/null || true
+
+sudo nohup socat \
+  TCP4-LISTEN:8080,reuseaddr,fork \
+  TCP4:${MINI_IP}:30083 \
+  >/tmp/socat-8080.log 2>&1 &

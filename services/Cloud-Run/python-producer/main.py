@@ -4,7 +4,7 @@ import threading
 from flask import Flask, jsonify
 
 
-# Pub/Sub optional importieren (Server startet auch ohne Pub/Sub)
+
 try:
     from google.cloud import pubsub_v1
     HAS_PUBSUB = True
@@ -40,7 +40,7 @@ def is_cold_start() -> bool:
         return False
 
 def init_publisher():
-    ## Batching AUS (Count=1, Bytes=1, Delay=0) für reproduzierbare Messungen."""
+    ##Batching AUS (Count=1, Bytes=1, Delay=0) für reproduzierbare Messungen.
     global publisher, topic_path
     if not (HAS_PUBSUB and PROJECT and TOPIC):
         # Hilfreiches Diagnose-Log, wenn eine Voraussetzung fehlt
@@ -65,7 +65,7 @@ def init_publisher():
 
 
 @app.get("/")
-def liveness():#  prozess läuft 
+def liveness():#prozess läuft 
     
     return "ok", 200
 
@@ -93,13 +93,13 @@ def send():
     t0 = time.perf_counter() #uhr starten 
     fut = publisher.publish(topic_path, b"Cloud Run latency test") # geht in message broker 
     try:
-        #blockiert bis borker ack 
+        #blockiert bis brocker ack ack 
        
         fut.result(timeout=30)
     except Exception as e:
         return jsonify(error=f"publish error: {type(e).__name__}: {e}"), 500
 
-    ms = round((time.perf_counter() - t0) * 1000.0, 2) # zeit berechenen darau f
+    ms = round((time.perf_counter() - t0) * 1000.0, 2) # zeit berechenen darauf
     return jsonify(latency_ms=ms, cold_start = cold), 200
 
 

@@ -1,8 +1,8 @@
-# Ignoriere Python Cache
+#Python Cache ignorieren
 __pycache__/
 *.pyc
 
-# Lokale venv
+#Lokale venv
 venv/
 env/
 *.env

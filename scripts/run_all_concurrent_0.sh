@@ -5,27 +5,27 @@ STAGE="${STAGE:-0}"
 REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 [[ -f "$REPO_ROOT/.env" ]] && set -a && source "$REPO_ROOT/.env" && set +a || true
 
-if [[ -z "${CE_BASE:-}" ]]; then
-  case "$STAGE" in
-    0) CE_BASE="http://127.0.0.1:8080" ;;
-    # ;;   # Stufe 1 => localhost
+# if [[ -z "${CE_BASE:-}" ]]; then
+#   case "$STAGE" in
+#     0) CE_BASE="http://127.0.0.1:8080" ;;
+#     # ;;   # Stufe 1 => localhost
 
-    # optional weitere Defaults:
-    # 2) CE_BASE="http://10.0.0.2:8080" ;;
-    # 3) CE_BASE="http://34.32.11.63:8080" ;;
-    *) : ;;  # für andere Stages kein Auto-Default
-  esac
-fi
+#     # optional weitere Defaults:
+#     # 2) CE_BASE="http://10.0.0.2:8080" ;;
+#     # 3) CE_BASE="http://34.32.11.63:8080" ;;
+#     *) : ;;  # für andere Stages kein Auto-Default
+#   esac
+# fi
 
 BASE_RESULTS_DIR="${BASE_RESULTS_DIR:-$REPO_ROOT/Testresults}"
-STAGE_LABEL="${STAGE_LABEL:-S${STAGE}_concurrent}"  # beim independent-Skript: S0_independent //hier zahl dynamisch übergeben dh wir schrieben skritp dass zaahl zwsiche 0 und 5 übergibt und damit die tests starte t 
+STAGE_LABEL="${STAGE_LABEL:-S${STAGE}_concurrent}"  #beim independent-Skript: S0_independent und zahl dynamisch übergeben dh wir schrieben skritp dass zaahl zwsiche 0 und 5 übergibt und damit die tests starte t 
 TS_UTC="$(date -u +"%Y-%m-%d_%H-%M-%S")"
 RUN_ID="$(printf 'run-%04d' $(( RANDOM % 10000 )))"   # oder zähler, s.u.
 OUTDIR="${BASE_RESULTS_DIR}/${STAGE_LABEL}/${TS_UTC}_${RUN_ID}"
 CHANNEL="${CHANNEL:-node}"
 mkdir -p "$OUTDIR"
 
-#zentrale Index-Datei
+#Index-Datei
 MASTER_INDEX="${BASE_RESULTS_DIR}/index.csv"
 if [[ ! -f "$MASTER_INDEX" ]]; then
   echo "ts_utc,stage,run_id,dir,project,instance,zone,count,sleep,timeout,ce_base,cr_base,channel" > "$MASTER_INDEX"
@@ -33,7 +33,7 @@ fi
 
 
 
-# Stage 0: Cloud Run only, beide Endpunkte gleichzeitig pro Runde ---
+#Stage 0:Cloud Run only, beide Endpunkte gleichzeitig pro Runde 
 : "${CR_BASE:?Setze CR_BASE, z.B. https://cloudrun-broker-single-go-997595983891.europe-west10.run.app}" 
 : "${CE_BASE:?Setze CE_BASE, z.B. http://127.0.0.1:8080}" # überlegen wie ich sie dynamsich übergeben kann ge
 : "${COUNT:=500}"       #Runden/Requests je Endpoint
@@ -97,7 +97,7 @@ PY
 echo "Starte S${STAGE}: COUNT=$COUNT, SLEEP=$SLEEP"
 for i in $(seq 1 "$COUNT"); do
   #parallel abfeuern der endpunkte 
-  measure_one "cr_nobatch" "$cr_nobatch_url" "$CSV_CR_NB" & # jede measure_one funtkion ruft intern curl auf, alle vier gleichzeitig 
+  measure_one "cr_nobatch" "$cr_nobatch_url" "$CSV_CR_NB" & #jede measure_one funtkion ruft intern curl auf, alle vier gleichzeitig 
   cr_pid_nb=$!
   measure_one "cr_batch"   "$cr_batch_url"   "$CSV_CR_B"  &
   cr_pid_b=$!
@@ -105,7 +105,7 @@ for i in $(seq 1 "$COUNT"); do
   ce_pid_nb=$!
   measure_one "ce_batch"   "$ce_batch_url"   "$CSV_CE_B"  &
   ce_pid_b=$!
-  wait "$cr_pid_nb" "$cr_pid_b" "$ce_pid_nb" "$ce_pid_b" # warten bis alle veir fertig sind vor neuer runde 
+  wait "$cr_pid_nb" "$cr_pid_b" "$ce_pid_nb" "$ce_pid_b" #warten bis alle veir fertig sind vor neuer runde 
   sleep "$SLEEP"
 done
 
