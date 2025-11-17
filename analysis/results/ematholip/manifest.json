@@ -1,0 +1,16 @@
+{
+  "generated_at": "2025-11-15T20:44:42.268756Z",
+  "run_summary": "/Users/susannahufnagl/Desktop/UNI_Bachelor/TU Berlin/lebach/ba/analysis/results/ematholip/run_summary.csv",
+  "category_summary": "/Users/susannahufnagl/Desktop/UNI_Bachelor/TU Berlin/lebach/ba/analysis/results/ematholip/category_summary.csv",
+  "phase_deltas": "/Users/susannahufnagl/Desktop/UNI_Bachelor/TU Berlin/lebach/ba/analysis/results/ematholip/phase_deltas.csv",
+  "figures": [
+    "/Users/susannahufnagl/Desktop/UNI_Bachelor/TU Berlin/lebach/ba/analysis/results/ematholip/figures/boxplot_client_ce_batch.png",
+    "/Users/susannahufnagl/Desktop/UNI_Bachelor/TU Berlin/lebach/ba/analysis/results/ematholip/figures/boxplot_client_ce_nobatch.png",
+    "/Users/susannahufnagl/Desktop/UNI_Bachelor/TU Berlin/lebach/ba/analysis/results/ematholip/figures/boxplot_client_cr_batch.png",
+    "/Users/susannahufnagl/Desktop/UNI_Bachelor/TU Berlin/lebach/ba/analysis/results/ematholip/figures/boxplot_client_cr_nobatch.png",
+    "/Users/susannahufnagl/Desktop/UNI_Bachelor/TU Berlin/lebach/ba/analysis/results/ematholip/figures/boxplot_server_ce_batch.png",
+    "/Users/susannahufnagl/Desktop/UNI_Bachelor/TU Berlin/lebach/ba/analysis/results/ematholip/figures/boxplot_server_ce_nobatch.png",
+    "/Users/susannahufnagl/Desktop/UNI_Bachelor/TU Berlin/lebach/ba/analysis/results/ematholip/figures/boxplot_server_cr_batch.png",
+    "/Users/susannahufnagl/Desktop/UNI_Bachelor/TU Berlin/lebach/ba/analysis/results/ematholip/figures/boxplot_server_cr_nobatch.png"
+  ]
+}
