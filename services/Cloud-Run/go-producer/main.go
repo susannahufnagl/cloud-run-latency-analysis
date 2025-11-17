@@ -47,7 +47,7 @@ func init() {
 	}
 }
 
-// erzeugt client und zwei topic handles (batch/nobatch)
+//erzeugt client und zwei topic handles (batch/nobatch)
 func initPublisher(ctx context.Context) bool {
 	if projectID == "" || topicID == "" {
 		log.Println("[initPublisher] missing PROJECT or TOPIC")
