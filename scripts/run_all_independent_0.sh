@@ -113,7 +113,7 @@ stream_endpoint "ce_nobatch" "$ce_nobatch_url" "$CSV_CE_NB" &
 pid_ce_nb=$!
 stream_endpoint "ce_batch"   "$ce_batch_url"   "$CSV_CE_B"  &
 pid_ce_b=$!
-
+# pro endpoint ein eigener stream von count requets ohne sleep, alle vier streams laufen parallel 
 #auf alle vier Streams warten
 wait "$pid_cr_nb" "$pid_cr_b" "$pid_ce_nb" "$pid_ce_b"
 
