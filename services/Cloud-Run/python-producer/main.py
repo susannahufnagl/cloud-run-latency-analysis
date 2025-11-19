@@ -43,7 +43,7 @@ def init_publisher():
     ##Batching AUS (Count=1, Bytes=1, Delay=0) für reproduzierbare Messungen.
     global publisher, topic_path
     if not (HAS_PUBSUB and PROJECT and TOPIC):
-        # Hilfreiches Diagnose-Log, wenn eine Voraussetzung fehlt
+        #  Diagnose-Log, wenn eine Voraussetzung fehlt
         print(f"[init_publisher] missing -> HAS_PUBSUB={HAS_PUBSUB} PROJECT={PROJECT} TOPIC={TOPIC}",
               flush=True)
         return False
@@ -90,7 +90,7 @@ def send():
         
     cold = is_cold_start()
     
-    t0 = time.perf_counter() #uhr starten 
+    t0 = time.perf_counter() # uhr starten 
     fut = publisher.publish(topic_path, b"Cloud Run latency test") # geht in message broker 
     try:
         #blockiert bis brocker ack ack 
