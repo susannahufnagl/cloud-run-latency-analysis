@@ -102,7 +102,7 @@ stream_endpoint() { #name url csv
     # sleep "$SLEEP"
   done
 }
-
+# open closed workload nachschauen und einbinden 
 echo "Starte Streams: je Endpoint $COUNT Requests back-to-back (keine Runden, kein Warten)"
 #vier unabhängige Streams gleichzeitig starten
 stream_endpoint "cr_nobatch" "$cr_nobatch_url" "$CSV_CR_NB" &
