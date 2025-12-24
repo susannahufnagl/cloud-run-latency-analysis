@@ -29,7 +29,9 @@ cython_debug/
 *.test
 *.out
 
-
+kubectl
+**/kubectl
+*.bin
 
 
 # Terraform
