@@ -6,16 +6,6 @@ STAGE="${STAGE:-0}"
 REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 [[ -f "$REPO_ROOT/.env" ]] && set -a && source "$REPO_ROOT/.env" && set +a || true
 
-# if [[ -z "${CE_BASE:-}" ]]; then
-#   case "$STAGE" in
-#     0) CE_BASE= "http://127.0.0.1:8080" ;;
-#     # ;;   # Stufe 1 => localhost
-#     # optional weitere Defaults:
-#     # 2) CE_BASE="http://10.0.0.2:8080" ;;
-#     # 3) CE_BASE="http://34.32.11.63:8080" ;;
-#     *) : ;;  # für andere Stages kein Auto-Default
-#   esac
-# fi
 
 BASE_RESULTS_DIR="${BASE_RESULTS_DIR:-$REPO_ROOT/Testresults}"
 STAGE_LABEL="${STAGE_LABEL:-S${STAGE}_independent}" 
